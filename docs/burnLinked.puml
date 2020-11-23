@@ -1,0 +1,35 @@
+@startuml
+
+title Burn notes to linked ERC20 contract
+
+actor "Token Owner" as owner
+participant token as "ERC20 Token" <<Contract>>
+participant asset as "zero-knowledge asset" <<Contract>>
+participant ace as "AZTEC Cryptography Engine (ACE)" <<Contract>>
+participant registry as "Note Registry" <<Contract>>
+
+owner -> owner : inputNotes
+note right: notes that will be spent for the withdrawal
+owner -> owner : JoinSplitProof (inputNotes, [], senderAddress, publicAmount, tokenOwner) => proof
+note right: there are no outputNotes so just pass an empty array\nsenderAddress is typically the tokenOwner but it can be a third party or contract\nthe publicAmount is the positive withdrawal amount
+owner -> owner : proof.encodeABI (assetAddress) => proofData
+owner -> ace : publicApprove (assetAddress, proof.hash, withdrawalAmount)
+activate ace
+return
+
+owner -> owner : proof.constructSignatures(assetAddress, [InputNotePrivateKey]) => proofSignatures
+note right: the second parameter is an array of input note owner. Each private key signs each input note
+owner -> asset : confidentialTransfer (proofData, proofSignatures)
+activate asset
+asset -> ace : updateNoteRegistry(proofId, proofOutput, assetContractAddress);
+activate ace
+ace -> registry : behaviour.updateNoteRegistry(proofId, proofOutput)
+activate registry
+registry -> token : transfer (tokenOwner, withdrawalAmount)
+activate token
+return
+return
+return
+return
+
+@enduml

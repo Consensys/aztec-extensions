@@ -1,0 +1,36 @@
+@startuml
+
+title Note sender releases on-hold notes after hold expiration date.
+
+actor "Note Sender" as sender
+actor "Notary" as notary
+participant asset as "zero-knowledge asset" <<Contract>>
+participant ace as "AZTEC Cryptography Engine (ACE)" <<Contract>>
+participant registry as "Note Registry" <<Contract>>
+actor "Note Recipient" as recipient
+
+sender -> sender : ([noteHash]) => inputNotes
+sender -> sender : ([publicKey, value]) => outputNotes
+sender -> sender : JoinSplitProof (inputNotes,\noutputNotes,\nassetContractAddress) => proof
+sender -> sender : proof.encodeABI (assetContractAddress) => proofData
+sender -> sender : signHoldForProof(assetAddress,\nproofData, notaryAddress, expirationDateTime, lockHash,\nsenderPrivateKey) => holdSignature
+
+sender -> asset : holdProof (proofId, proofData, notaryAddress, expirationDateTime, lockHash, holdSignature)
+activate asset
+asset -> ace : validateProof (proofId, notaryAddress, proofData) => proofOutput
+activate ace
+return
+asset -> asset : validateSignature(holdSignature) => sender
+asset -> asset : extractNotes(proofOutput) => inputNotes
+asset -> asset : holdNotes(inputNotes)
+return event NewHold(holdId, sender, noteHash, notary, expirationDateTime, lockHash)
+
+== Hold Expiration Time ==
+
+sender -> sender : signHoldForProof(assetAddress, holdId, senderPrivateKey) => releaseSignature
+sender -> asset : releaseHold(holdId, releaseSignature)
+activate asset
+asset -> asset : releaseNoteHolds(inputNotes)
+return
+
+@enduml

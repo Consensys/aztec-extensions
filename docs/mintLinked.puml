@@ -1,0 +1,38 @@
+@startuml
+
+title Mint notes from linked ERC20 contract
+
+actor "Token Owner" as owner
+participant token as "ERC20 Token" <<Contract>>
+participant asset as "zero-knowledge asset" <<Contract>>
+participant ace as "AZTEC Cryptography Engine (ACE)" <<Contract>>
+participant registry as "Note Registry" <<Contract>>
+
+owner -> token : approve (aceContractAddress, depositAmount)
+activate token
+return
+owner -> owner : [note.create (publicKey, depositAmount)] => outputNotes
+owner -> owner : depositAmount * -1 => publicAmount
+note right: publicAmount is negative for deposits
+owner -> owner : JoinSplitProof ([], outputNotes, senderAddress, publicAmount, tokenOwner) => proof
+note right: there are no inputNotes so just pass an empty array\nsenderAddress is typically the tokenOwner but it can be a third party or contract
+owner -> owner : proof.encodeABI (assetAddress) => proofData
+owner -> ace : publicApprove (assetAddress, proof.hash, depositAmount)
+activate ace
+return
+
+owner -> asset : confidentialTransfer (proofData, [])
+note right: the signatures is an empty array as there are no input notes being spent.
+activate asset
+asset -> ace : updateNoteRegistry(proofId, proofOutput, assetContractAddress);
+activate ace
+ace -> registry : behaviour.updateNoteRegistry(proofId, proofOutput)
+activate registry
+registry -> token : transferFrom (tokenOwner, assetAddress, depositAmount)
+activate token
+return
+return
+return
+return
+
+@enduml

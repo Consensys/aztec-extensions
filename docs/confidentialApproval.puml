@@ -1,0 +1,45 @@
+@startuml
+
+title Third party transferring AZTEC notes after confidential approval
+
+actor "Note Spender" as spender
+actor "3rd Party Sender" as sender
+participant asset as "zero-knowledge asset" <<Contract>>
+participant ace as "AZTEC Cryptography Engine (ACE)" <<Contract>>
+participant registry as "Note Registry" <<Contract>>
+actor "Note Receiver" as receiver
+
+spender -> spender : ([noteHash]) => inputNotes
+spender -> spender : signNoteForConfidentialApprove(assetAddress, inputNoteHash, senderAddress, true, inputNoteOwnerPrivateKey) => proofSignature
+spender -> asset : confidentialApprove (noteHash, senderAddress, true, proofSignature)
+activate asset
+asset -> ace : getNote (assetAddress, noteHash) 
+activate ace
+return note
+asset -> asset : assetNoteUnspent()
+return
+
+sender -> sender : ([noteHash]) => inputNotes
+sender -> sender : ([publicKey, value]) => outputNotes
+sender -> sender : JoinSplitProof (inputNotes, outputNotes, senderAddress) => proof
+sender -> sender : proof.encodeABI (assetContractAddress) => proofData
+sender -> ace : validateProof (proofId, senderAddress, proofData)
+activate ace
+return proofOutputs
+
+sender -> asset : confidentialTransferFrom (proofId, proofOutput)
+activate asset
+asset -> ace : updateNoteRegistry(proofId, proofOutput, assetContractAddress);
+activate ace
+ace -> registry : behaviour.updateNoteRegistry(proofId, proofOutput)
+activate registry
+return
+return
+return
+
+asset -> receiver : CreateNote(noteHash, owner, metadata)
+note right: watches for asset events
+activate receiver
+receiver -> receiver : fromEventLog(metadata, privateKey) => note
+
+@enduml

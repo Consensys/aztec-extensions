@@ -1,0 +1,42 @@
+@startuml
+
+title Third party transferring AZTEC notes after join split approval
+
+actor "Note Sender" as sender
+actor "3rd Party Sender" as notary
+participant asset as "zero-knowledge asset" <<Contract>>
+participant ace as "AZTEC Cryptography Engine (ACE)" <<Contract>>
+participant registry as "Note Registry" <<Contract>>
+actor "Note Recipient" as recipient
+
+sender -> sender : ([noteHash]) => inputNotes
+sender -> sender : ([publicKey, value]) => outputNotes
+sender -> sender : JoinSplitProof (inputNotes, outputNotes, 3rdPartyAddress) => proof
+sender -> sender : signApprovalForProof(assetAddress, proof.outputs, 3rdPartyAddress, true, senderPrivateKey) => approvalSignature
+
+sender -> asset : approveProof (proofId, proof.outputs, 3rdPartyAddress, true, approvalSignature)
+activate asset
+return
+
+notary -> notary : proof.encodeABI (assetContractAddress) => proofData
+notary -> ace : validateProof (proofId, 3rdPartyAddress, proofData)
+note right: tx has to be sent by the 3rd party
+activate ace
+return
+
+notary -> asset : confidentialTransferFrom (proofId, proof.outputs)
+activate asset
+asset -> ace : updateNoteRegistry(proofId, proofOutput, assetContractAddress);
+activate ace
+ace -> registry : behaviour.updateNoteRegistry(proofId, proofOutput)
+activate registry
+return
+return
+return
+
+asset -> recipient : CreateNote(noteHash, owner, metadata)
+note right: watches for asset events
+activate recipient
+recipient -> recipient : fromEventLog(metadata, privateKey) => note
+
+@enduml

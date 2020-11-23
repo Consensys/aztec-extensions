@@ -1,0 +1,18 @@
+@startuml
+
+title Aztec Contracts Entities
+
+entity "Aztec Cryptography Engine (ACE)" as ace
+entity "Note Registry Manager" as nrm
+ace ||-|| nrm
+
+entity "Zero-Knowledge Asset" as asset
+ace ||--o{ asset
+
+entity "Note" as note {
+    owner : address
+}
+asset ||--o{ note
+' nrm ||---o{ note
+
+@enduml

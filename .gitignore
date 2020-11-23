@@ -1,0 +1,24 @@
+# compiled output
+/dist
+/node_modules
+
+src/chain/abis
+src/chain/**/types
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# IDEs and editors
+.idea/
+.vscode/
+.c9/
+.settings/
+*.sublime-workspace

@@ -1,0 +1,36 @@
+@startuml
+
+title Mint notes directly to a zero-knowledge asset
+
+actor "Asset Owner" as owner
+participant asset as "zero-knowledge asset" <<Contract>>
+participant ace as "AZTEC Cryptography Engine (ACE)" <<Contract>>
+participant registry as "Note Registry" <<Contract>>
+actor "Note Receiver" as receiver
+
+owner -> owner : currentTotalValueNote
+note right: the first mint will be createZeroValueNote() then the newTotalValueNote of the last mint.
+owner -> owner : note.create(ownerPublicKey, newTotalMintedValue) => newTotalValueNote
+note right: newTotalMintedValue = currentTotalValueNote + sum of values of the minted notes
+owner -> owner : ([publicKey, value]) => mintedNotes
+owner -> owner : MintProof (currentTotalValueNote, newTotalValueNote, mintedNotes, proofSenderAddress) => proof
+note right: proofSenderAddress is typically the asset owner address
+owner -> owner : proof.encodeABI (assetContractAddress) => proofData
+owner -> asset : confidentialMint (proofId, proofData)
+activate asset
+asset -> ace : mint (proofId, proofData, proofSenderAddress)
+note right: proofSenderAddress is the asset owner address in this scenario
+activate ace
+ace -> ace : validateProof (proof, proofSender, proofData)
+ace -> registry : behaviour.mint(proofOutputs)
+activate registry
+return
+return
+return
+
+asset -> receiver : CreateNote(noteHash, owner, metadata)
+note right: watches for asset events
+activate receiver
+receiver -> receiver : fromEventLog(metadata, privateKey) => note
+
+@enduml

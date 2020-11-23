@@ -1,0 +1,33 @@
+@startuml
+
+title Transferring AZTEC notes from the notes owner
+
+actor "Note Sender" as sender
+participant asset as "zero-knowledge asset" <<Contract>>
+participant ace as "AZTEC Cryptography Engine (ACE)" <<Contract>>
+participant registry as "Note Registry" <<Contract>>
+actor "Note Receiver" as receiver
+
+sender -> sender : ([noteHash]) => inputNotes
+sender -> sender : ([publicKey, value]) => outputNotes
+sender -> sender : JoinSplitProof (inputNotes, outputNotes, senderAddress) => proof
+sender -> sender : proof.encodeABI (assetContractAddress) => proofData
+sender -> sender : proof.constructSignatures (assetContractAddress, [inputNotesPrivateKeys]) => proofSignatures
+sender -> asset : confidentialTransfer(proofData, proofSignatures)
+activate asset
+asset -> ace : validateProof(proofId, msg.sender, proofData)
+activate ace
+return proofOutputs
+asset -> ace : updateNoteRegistry(proofId, proofOutput, assetContractAddress);
+activate ace
+ace -> registry : behaviour.updateNoteRegistry(proofId, proofOutput)
+activate registry
+return
+return
+return
+
+asset -> receiver : CreateNote(noteHash, owner, metadata)
+activate receiver
+receiver -> receiver : fromEventLog(metadata, privateKey) => note
+
+@enduml

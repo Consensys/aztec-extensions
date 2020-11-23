@@ -1,0 +1,34 @@
+@startuml
+
+title Create a note viewable by another party
+
+actor "Note Viewer" as viewer
+actor "Note Owner" as owner
+participant asset as "zero-knowledge asset" <<Contract>>
+
+viewer -> viewer : generatesKeyPair ()
+note right : elliptic curve Diffie–Hellman (ECDH) using Curve25519. This is different to Ethereum's secp256k1 curve.
+viewer -> owner : share (ECDH_PublicKey)
+
+owner -> owner : createViewAccess(ethereumAddress, ECDH_PublicKey) => linkedAccount
+note right : ECDH_PublicKey is the 32 byte public key of the generated ECDH key pair
+owner -> owner : ([noteHash]) => inputNotes
+note right : Can be one or many notes.
+owner -> owner : ([EthereumPublicKey, value, [linkedAccount]]) => outputNotes
+note right : EthereumPublicKey is the 64 byte public key of the note owner's Ethereum account.
+owner -> owner : JoinSplitProof (inputNotes, outputNotes, senderAddress) => proof
+owner -> owner : proof.encodeABI (assetContractAddress) => proofData
+owner -> owner : proof.constructSignatures (assetContractAddress, [inputNotesPrivateKeys]) => proofSignatures
+note right : inputNotesPrivateKeys is the 64 byte Ethereum private keys of the input note owners.
+owner -> asset : confidentialTransfer(proofData, proofSignatures)
+activate asset
+return
+
+asset -> viewer : CreateNote(noteHash, owner, metadata)
+viewer -> viewer : getEncryptedViewingKey(metadata) => encryptedViewingKey
+viewer -> viewer : decryptViewingKey(encryptedViewingKey, ECDH_PrivateKey) => viewingKey
+note right : ECDH_PrivateKey is the 32 byte secret of the generated ECDH key pair.
+viewer -> viewer : createNote(viewingKey) => note
+note right : can view the note value but can not spend it if not the note owner.
+
+@enduml

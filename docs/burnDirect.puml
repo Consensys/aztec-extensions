@@ -1,0 +1,30 @@
+@startuml
+
+title Burn notes directly from a zero-knowledge asset
+
+actor "Asset Owner" as owner
+participant asset as "zero-knowledge asset" <<Contract>>
+participant ace as "AZTEC Cryptography Engine (ACE)" <<Contract>>
+participant registry as "Note Registry" <<Contract>>
+
+owner -> owner : currentTotalValueNote
+note right: the first mint will be createZeroValueNote() then the newTotalValueNote of the last burn.
+owner -> owner : note.create(ownerPublicKey, newTotalBurnedValue) => newTotalValueNote
+note right: newTotalBurnedValue = currentTotalValueNote + sum of values of the burnt notes
+owner -> owner : ([publicKey, value]) => burnedNotes
+owner -> owner : BurnProof (currentTotalValueNote, newTotalValueNote, burnedNotes, proofSenderAddress) => proof
+note right: proofSenderAddress is typically the asset owner address
+owner -> owner : proof.encodeABI (assetContractAddress) => proofData
+owner -> asset : confidentialBurn (proofId, proofData)
+activate asset
+asset -> ace : burn (proofId, proofData, proofSenderAddress)
+note right: proofSenderAddress is the asset owner address in this scenario
+activate ace
+ace -> ace : validateProof (proof, proofSender, proofData)
+ace -> registry : behaviour.burn(proofOutputs)
+activate registry
+return
+return
+return
+
+@enduml
