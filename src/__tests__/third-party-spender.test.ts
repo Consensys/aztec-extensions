@@ -14,9 +14,7 @@ import AceMigator from "../chain/migration/1_ace"
 import ZkAssetDirectMigrator from "../chain/migration/3_zkAssetDirect"
 import NoteEscrowMigrator from "../chain/migration/5_noteEscrow"
 import migratorFactory, { Migrator } from "../chain/migration/migrator"
-import { Ace } from "../chain/types/Ace"
-import { NoteEscrow } from "../chain/types/NoteEscrow"
-import { ZkAssetDirect } from "../chain/types/ZkAssetDirect"
+import { ACE, NoteEscrow, ZkAssetDirect } from "../chain/types"
 import { zeroAddress } from "../chain/utils/addresses"
 import { WalletSigner } from "../chain/wallet/WalletSigner"
 import configPromise from "../config/index"
@@ -46,10 +44,10 @@ const account5 = secp256k1.accountFromPrivateKey(
 )
 
 describe("Third party and contract approvals to spend a note", () => {
-    let aceContract: Ace
-    let account2AceContract: Ace
-    let account3AceContract: Ace
-    let account5AceContract: Ace
+    let aceContract: ACE
+    let account2AceContract: ACE
+    let account3AceContract: ACE
+    let account5AceContract: ACE
     let migrator: Migrator
     let account2Signer: Signer
     let account3Signer: Signer

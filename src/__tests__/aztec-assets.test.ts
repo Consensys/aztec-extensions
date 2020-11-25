@@ -17,10 +17,7 @@ import SimpleTokenMigator from "../chain/migration/2_simpleToken"
 import ZkAssetDirectMigrator from "../chain/migration/3_zkAssetDirect"
 import ZkAssetLinkedMigrator from "../chain/migration/4_zkAssetLinked"
 import migratorFactory, { Migrator } from "../chain/migration/migrator"
-import { Ace } from "../chain/types/Ace"
-import { SimpleToken } from "../chain/types/SimpleToken"
-import { ZkAsset } from "../chain/types/ZkAsset"
-import { ZkAssetDirect } from "../chain/types/ZkAssetDirect"
+import { ACE, SimpleToken, ZkAsset, ZkAssetDirect } from "../chain/types"
 import { zeroAddress } from "../chain/utils/addresses"
 import { WalletSigner } from "../chain/wallet/WalletSigner"
 import configPromise from "../config/index"
@@ -59,8 +56,8 @@ const agentClient1 = secp256k1.accountFromPrivateKey(
 )
 
 describe("Mint, transfer, burn, deposit and withdrawal of  assets", () => {
-    let aceContract: Ace
-    let cbAce: Ace
+    let aceContract: ACE
+    let cbAce: ACE
     let migrator: Migrator
     let issuerSigner: Signer
     let provider1Signer: Signer

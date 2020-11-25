@@ -1,5 +1,5 @@
 import { compilerOutput } from "../contracts/SimpleTokenContract"
-import { SimpleToken } from "../types/SimpleToken"
+import { SimpleToken } from "../types"
 import { Migrator } from "./migrator"
 
 // Deploys the simple ERC20 token that is mintable

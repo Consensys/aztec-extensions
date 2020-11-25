@@ -5,8 +5,7 @@ import { JoinSplitProof, MintProof, note } from "aztec.js"
 import { compilerOutput as zkZkProofTestingCompilerOutput } from "../chain/contracts/ZkProofTestingContract"
 import AceMigator from "../chain/migration/1_ace"
 import migratorFactory, { Migrator } from "../chain/migration/migrator"
-import { Ace } from "../chain/types/Ace"
-import { ZkProofTesting } from "../chain/types/ZkProofTesting"
+import { ACE, ZkProofTesting } from "../chain/types"
 import { zeroAddress } from "../chain/utils/addresses"
 import { WalletSigner } from "../chain/wallet/WalletSigner"
 import configPromise from "../config/index"
@@ -23,7 +22,7 @@ const buyer = secp256k1.generateAccount()
 const notary = secp256k1.generateAccount()
 
 describe("Aztec proofs", () => {
-    let aceContract: Ace
+    let aceContract: ACE
     let migrator: Migrator
     let proofTesting: ZkProofTesting
 

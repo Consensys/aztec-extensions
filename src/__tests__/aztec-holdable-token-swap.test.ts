@@ -11,10 +11,7 @@ import { compilerOutput as holdableTokenCompilerOutput } from "../chain/contract
 import { compilerOutput as zkAssetHoldableCompilerOutput } from "../chain/contracts/ZkAssetHoldableContract"
 import AceMigator from "../chain/migration/1_ace"
 import migratorFactory, { Migrator } from "../chain/migration/migrator"
-import { Ace } from "../chain/types/Ace"
-import { DvpHoldableLockableSwap } from "../chain/types/DvpHoldableLockableSwap"
-import { HoldableToken } from "../chain/types/HoldableToken"
-import { ZkAssetHoldable } from "../chain/types/ZkAssetHoldable"
+import { ACE, DVPHoldableLockableSwap, HoldableToken, ZkAssetHoldable } from "../chain/types"
 import { zeroAddress } from "../chain/utils/addresses"
 import { aztecSigner } from "../chain/utils/aztecSigner"
 import { WalletSigner } from "../chain/wallet/WalletSigner"
@@ -35,9 +32,9 @@ const buyer = secp256k1.generateAccount()
 const notary = secp256k1.generateAccount()
 
 describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
-    let aceContract: Ace
-    let cbAce: Ace
-    let notaryAce: Ace
+    let aceContract: ACE
+    let cbAce: ACE
+    let notaryAce: ACE
     let migrator: Migrator
     let issuerMigrator: Migrator
     let issuerSigner: Signer
@@ -51,7 +48,7 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
     let sellerCash: ZkAssetHoldable
     let buyerCash: ZkAssetHoldable
     let notaryCash: ZkAssetHoldable
-    let dvpContract: DvpHoldableLockableSwap
+    let dvpContract: DVPHoldableLockableSwap
     let buyerCashNote1
     let buyerCashNote2
 
@@ -148,7 +145,7 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
         })
 
         test("Deploy Holdable DvP Contract", async () => {
-            dvpContract = await migrator.deploy<DvpHoldableLockableSwap>(
+            dvpContract = await migrator.deploy<DVPHoldableLockableSwap>(
                 dvpCompilerOutput
             )
         })

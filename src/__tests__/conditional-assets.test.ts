@@ -10,12 +10,7 @@ import { compilerOutput as ZkConditionViewAccessCompilerOutput } from "../chain/
 import AceMigator from "../chain/migration/1_ace"
 import ZkAssetConditionalMigrator from "../chain/migration/7_zkAssetConditional"
 import migratorFactory, { Migrator } from "../chain/migration/migrator"
-import { Ace } from "../chain/types/Ace"
-import { ZkAssetConditional } from "../chain/types/ZkAssetConditional"
-import { ZkConditionAggregated } from "../chain/types/ZkConditionAggregated"
-import { ZkConditionApprovedAccounts } from "../chain/types/ZkConditionApprovedAccounts"
-import { ZkConditionSuspend } from "../chain/types/ZkConditionSuspend"
-import { ZkConditionViewAccess } from "../chain/types/ZkConditionViewAccess"
+import { ACE, ZkAssetConditional, ZkConditionAggregated, ZkConditionApprovedAccounts, ZkConditionSuspend, ZkConditionViewAccess } from "../chain/types"
 import { zeroAddress } from "../chain/utils/addresses"
 import { WalletSigner } from "../chain/wallet/WalletSigner"
 import configPromise from "../config/index"
@@ -47,10 +42,10 @@ const regulator = secp256k1.accountFromPrivateKey(
 )
 
 describe("Conditional transfers of notes", () => {
-    let aceContract: Ace
-    let account2AceContract: Ace
-    let account3AceContract: Ace
-    let account5AceContract: Ace
+    let aceContract: ACE
+    let account2AceContract: ACE
+    let account3AceContract: ACE
+    let account5AceContract: ACE
     let migrator: Migrator
     let issuerSigner: Signer
     let bank1Signer: Signer

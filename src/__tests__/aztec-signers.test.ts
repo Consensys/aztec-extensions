@@ -7,8 +7,7 @@ import { AZTEC_JS_METADATA_PREFIX_LENGTH } from "../chain/aztec/constants"
 import AceMigator from "../chain/migration/1_ace"
 import ZkAssetDirectMigrator from "../chain/migration/3_zkAssetDirect"
 import migratorFactory, { Migrator } from "../chain/migration/migrator"
-import { Ace } from "../chain/types/Ace"
-import { ZkAssetDirect } from "../chain/types/ZkAssetDirect"
+import { ACE, ZkAssetDirect } from "../chain/types"
 import { zeroAddress } from "../chain/utils/addresses"
 import { WalletSigner } from "../chain/wallet/WalletSigner"
 import configPromise from "../config/index"
@@ -26,10 +25,10 @@ const agentBank = secp256k1.generateAccount()
 const agentBankClient1 = secp256k1.generateAccount()
 
 describe("Note owners separated from Ethereum transaction signers", () => {
-    let aceContract: Ace
-    let cbAce: Ace
-    let bank1Ace: Ace
-    let bank2Ace: Ace
+    let aceContract: ACE
+    let cbAce: ACE
+    let bank1Ace: ACE
+    let bank2Ace: ACE
     let deployerMigrator: Migrator
     let issuerMigrator: Migrator
     let issuerSigner: Signer

@@ -8,7 +8,7 @@ import * as SwapCompilerOutput from "../abis/Swap.json"
 import { compilerOutput } from "../contracts/AceContract"
 import { compilerOutput as FactoryAdjustableCompilerOutput } from "../contracts/FactoryAdjustableContract"
 import { compilerOutput as FactoryBaseCompilerOutput } from "../contracts/FactoryBaseContract"
-import { Ace } from "../types/Ace"
+import { ACE } from "../types/Ace"
 import { Dividend } from "../types/Dividend"
 import { JoinSplit } from "../types/JoinSplit"
 import { JoinSplitFluid } from "../types/JoinSplitFluid"
@@ -18,7 +18,7 @@ import { Migrator } from "./migrator"
 
 // Deploys the Aztec proof contracts and Aztec Cryptography Engine
 // (ACE)
-export default async (migrator: Migrator): Promise<Ace> => {
+export default async (migrator: Migrator): Promise<ACE> => {
     // Aztec proof contracts
     const dividendContract = await migrator.deploy<Dividend>(
         DividendCompilerOutput
@@ -36,7 +36,7 @@ export default async (migrator: Migrator): Promise<Ace> => {
     const swapContract = await migrator.deploy<Swap>(SwapCompilerOutput)
 
     // Aztec Cryptography Engine
-    const aceContract = await migrator.deploy<Ace>(compilerOutput)
+    const aceContract = await migrator.deploy<ACE>(compilerOutput)
     await aceContract.setCommonReferenceString(bn128.CRS)
 
     // Set proofs in ACE
