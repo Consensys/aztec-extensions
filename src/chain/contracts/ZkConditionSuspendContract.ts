@@ -1,7 +1,7 @@
 import { Contract, Signer } from "ethers"
 import * as ZkAssetViewAccessOutput from "../abis/ZkConditionSuspend.json"
 import providerFactory from "../provider/providerFactory"
-import { ZkConditionSuspend } from "../types/ZkConditionSuspend"
+import { ZkConditionSuspend } from "../types"
 
 export const compilerOutput = ZkAssetViewAccessOutput
 

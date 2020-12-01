@@ -1,7 +1,7 @@
 import { Contract, Signer } from "ethers"
 import * as zkAssetCompilerOutput from "../abis/ZkAsset.json"
 import providerFactory from "../provider/providerFactory"
-import { ZkAsset } from "../types/ZkAsset"
+import { ZkAsset } from "../types"
 
 export const compilerOutput = zkAssetCompilerOutput
 

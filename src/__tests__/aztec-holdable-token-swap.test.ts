@@ -11,7 +11,12 @@ import { compilerOutput as holdableTokenCompilerOutput } from "../chain/contract
 import { compilerOutput as zkAssetHoldableCompilerOutput } from "../chain/contracts/ZkAssetHoldableContract"
 import AceMigator from "../chain/migration/1_ace"
 import migratorFactory, { Migrator } from "../chain/migration/migrator"
-import { ACE, DVPHoldableLockableSwap, HoldableToken, ZkAssetHoldable } from "../chain/types"
+import {
+    ACE,
+    DVPHoldableLockableSwap,
+    HoldableToken,
+    ZkAssetHoldable,
+} from "../chain/types"
 import { zeroAddress } from "../chain/utils/addresses"
 import { aztecSigner } from "../chain/utils/aztecSigner"
 import { WalletSigner } from "../chain/wallet/WalletSigner"

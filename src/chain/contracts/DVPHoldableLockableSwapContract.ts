@@ -1,7 +1,7 @@
 import { Contract, Signer } from "ethers"
 import * as dvpHoldableLockableSwapCompilerOutput from "../abis/DVPHoldableLockableSwap.json"
 import providerFactory from "../provider/providerFactory"
-import { DvpHoldableLockableSwap } from "../types/DvpHoldableLockableSwap"
+import { DVPHoldableLockableSwap } from "../types"
 
 export const compilerOutput = dvpHoldableLockableSwapCompilerOutput
 
@@ -14,9 +14,9 @@ export enum Standard {
 export default async (
     signer: Signer | null = null,
     ensOrAddress?: string
-): Promise<DvpHoldableLockableSwap> => {
+): Promise<DVPHoldableLockableSwap> => {
     const provider = await providerFactory()
     const instance = new Contract(ensOrAddress, compilerOutput.abi, provider)
     const signerInstance = signer ? instance.connect(signer) : instance
-    return signerInstance as DvpHoldableLockableSwap
+    return signerInstance as DVPHoldableLockableSwap
 }

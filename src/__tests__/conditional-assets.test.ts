@@ -10,7 +10,14 @@ import { compilerOutput as ZkConditionViewAccessCompilerOutput } from "../chain/
 import AceMigator from "../chain/migration/1_ace"
 import ZkAssetConditionalMigrator from "../chain/migration/7_zkAssetConditional"
 import migratorFactory, { Migrator } from "../chain/migration/migrator"
-import { ACE, ZkAssetConditional, ZkConditionAggregated, ZkConditionApprovedAccounts, ZkConditionSuspend, ZkConditionViewAccess } from "../chain/types"
+import {
+    ACE,
+    ZkAssetConditional,
+    ZkConditionAggregated,
+    ZkConditionApprovedAccounts,
+    ZkConditionSuspend,
+    ZkConditionViewAccess,
+} from "../chain/types"
 import { zeroAddress } from "../chain/utils/addresses"
 import { WalletSigner } from "../chain/wallet/WalletSigner"
 import configPromise from "../config/index"

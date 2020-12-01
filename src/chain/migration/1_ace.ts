@@ -8,12 +8,7 @@ import * as SwapCompilerOutput from "../abis/Swap.json"
 import { compilerOutput } from "../contracts/AceContract"
 import { compilerOutput as FactoryAdjustableCompilerOutput } from "../contracts/FactoryAdjustableContract"
 import { compilerOutput as FactoryBaseCompilerOutput } from "../contracts/FactoryBaseContract"
-import { ACE } from "../types/Ace"
-import { Dividend } from "../types/Dividend"
-import { JoinSplit } from "../types/JoinSplit"
-import { JoinSplitFluid } from "../types/JoinSplitFluid"
-import { PrivateRange } from "../types/PrivateRange"
-import { Swap } from "../types/Swap"
+import { ACE, Dividend, JoinSplit, JoinSplitFluid, PrivateRange, Swap } from "../types"
 import { Migrator } from "./migrator"
 
 // Deploys the Aztec proof contracts and Aztec Cryptography Engine
