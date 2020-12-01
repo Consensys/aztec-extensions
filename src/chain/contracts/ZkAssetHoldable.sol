@@ -179,7 +179,7 @@ contract ZkAssetHoldable is IZkAssetHoldable, ZkAssetDirect {
 
         uint256 inputNotesCount = inputNotes.getLength();
         inputNoteHashes = new bytes32[](inputNotesCount);
-        uint256 outputNotesCount = inputNotes.getLength();
+        uint256 outputNotesCount = outputNotes.getLength();
         outputNoteHashes = new bytes32[](outputNotesCount);
 
         for (uint256 j = 0; j < inputNotesCount; j += 1) {
