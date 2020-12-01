@@ -1,7 +1,7 @@
 import { Contract, Signer } from "ethers"
 import * as ZkConditionApprovedAccountsOutput from "../abis/ZkConditionApprovedAccounts.json"
 import providerFactory from "../provider/providerFactory"
-import { ZkConditionApprovedAccounts } from "../types/ZkConditionApprovedAccounts"
+import { ZkConditionApprovedAccounts } from "../types"
 
 export const compilerOutput = ZkConditionApprovedAccountsOutput
 

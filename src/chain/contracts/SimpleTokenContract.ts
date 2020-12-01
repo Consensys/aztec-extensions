@@ -1,7 +1,7 @@
 import { Contract, Signer } from "ethers"
 import * as SimpleTokenCompilerOutput from "../abis/SimpleToken.json"
 import providerFactory from "../provider/providerFactory"
-import { SimpleToken } from "../types/SimpleToken"
+import { SimpleToken } from "../types"
 
 export const compilerOutput = SimpleTokenCompilerOutput
 

@@ -1,7 +1,7 @@
 import { Contract, Signer } from "ethers"
 import * as ZkProofTestingOutput from "../abis/ZkProofTesting.json"
 import providerFactory from "../provider/providerFactory"
-import { ZkProofTesting } from "../types/ZkProofTesting"
+import { ZkProofTesting } from "../types"
 
 export const compilerOutput = ZkProofTestingOutput
 

@@ -1,7 +1,7 @@
 import { Contract, Signer } from "ethers"
 import * as zkAssetDirectCompilerOutput from "../abis/NoteEscrow.json"
 import providerFactory from "../provider/providerFactory"
-import { NoteEscrow } from "../types/NoteEscrow"
+import { NoteEscrow } from "../types"
 
 export const compilerOutput = zkAssetDirectCompilerOutput
 

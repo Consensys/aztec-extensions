@@ -241,10 +241,7 @@ contract ZkAssetHoldable is IZkAssetHoldable, ZkAssetDirect {
         super.confidentialTransferFrom(_proofId, _proofOutput);
     }
 
-    function canTransfer(uint24 _proof, bytes memory _proofOutput)
-        internal
-        view
-    {
+    function canTransfer(uint24 _proof, bytes memory _proofOutput) internal {
         (
             bytes memory inputNotes,
             bytes memory outputNotes,
@@ -254,7 +251,8 @@ contract ZkAssetHoldable is IZkAssetHoldable, ZkAssetDirect {
 
         // for each input note in the proof
         for (uint256 i = 0; i < inputNotes.getLength(); i += 1) {
-            (, bytes32 noteHash, ) = inputNotes.get(i).extractNote();
+            (address noteOwner, bytes32 noteHash, bytes memory noteMetadata) =
+                inputNotes.get(i).extractNote();
 
             require(
                 heldNotes[noteHash] == false,
@@ -346,6 +344,11 @@ contract ZkAssetHoldable is IZkAssetHoldable, ZkAssetDirect {
             );
         } else if (holds[holdId].notary != sender) {
             revert("releaseHold: caller must be the hold sender or notary.");
+        }
+
+        // release the hold on the input notes
+        for (uint256 i = 0; i < holds[holdId].inputNotesHashes.length; i++) {
+            heldNotes[holds[holdId].inputNotesHashes[i]] = false;
         }
 
         holds[holdId].status = HoldStatusCode.Released;

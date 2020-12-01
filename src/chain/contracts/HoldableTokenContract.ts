@@ -1,7 +1,7 @@
 import { Contract, Signer } from "ethers"
 import * as holdableTokenCompilerOutput from "../abis/HoldableToken.json"
 import providerFactory from "../provider/providerFactory"
-import { HoldableToken } from "../types/HoldableToken"
+import { HoldableToken } from "../types"
 
 export const compilerOutput = holdableTokenCompilerOutput
 
