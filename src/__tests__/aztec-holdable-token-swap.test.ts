@@ -38,7 +38,7 @@ const notary = secp256k1.generateAccount()
 
 describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
     let aceContract: ACE
-    let cbAce: ACE
+    let issuerAce: ACE
     let notaryAce: ACE
     let migrator: Migrator
     let issuerMigrator: Migrator
@@ -56,6 +56,8 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
     let dvpContract: DVPHoldableLockableSwap
     let buyerCashNote1
     let buyerCashNote2
+    let splitTestBuyerCashNote1
+    let splitTestBuyerCashNote2
 
     beforeAll(async () => {
         const config = await configPromise
@@ -87,7 +89,6 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
         migrator = await migratorFactory(deployerWallet)
         issuerMigrator = await migratorFactory(issuerSigner)
     })
-
     describe("Test setup", () => {
         test("Deploy a holdable token asset", async () => {
             asset = await migrator.deploy<HoldableToken>(
@@ -111,10 +112,9 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
             expect(
                 await aceContract.getValidatorAddress(proofs.JOIN_SPLIT_PROOF)
             ).toMatch(ethereumAddress)
-            cbAce = aceContract.connect(issuerSigner)
+            issuerAce = aceContract.connect(issuerSigner)
             notaryAce = aceContract.connect(notarySigner)
         })
-
         test("Deploy zero-knowledge Cash", async () => {
             issuerCash = await issuerMigrator.deploy<ZkAssetHoldable>(
                 zkAssetHoldableCompilerOutput,
@@ -125,19 +125,26 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
             buyerCash = issuerCash.connect(buyerSigner)
             notaryCash = issuerCash.connect(notarySigner)
         })
-
         test("Issuer mints cash notes to the buyer", async () => {
             buyerCashNote1 = await note.create(buyer.publicKey, 100)
-            buyerCashNote2 = await note.create(buyer.publicKey, 110)
+            buyerCashNote2 = await note.create(buyer.publicKey, 100)
+            splitTestBuyerCashNote1 = await note.create(buyer.publicKey, 100)
+            splitTestBuyerCashNote2 = await note.create(buyer.publicKey, 100)
+
             const zeroValueNote = await note.createZeroValueNote()
             const newTotalValueAssetNote1 = await note.create(
                 deployer.publicKey,
-                210
+                400
             )
             const mintProof = new MintProof(
                 zeroValueNote,
                 newTotalValueAssetNote1,
-                [buyerCashNote1, buyerCashNote2],
+                [
+                    buyerCashNote1,
+                    buyerCashNote2,
+                    splitTestBuyerCashNote1,
+                    splitTestBuyerCashNote2,
+                ],
                 issuer.address
             )
             const mintData = mintProof.encodeABI()
@@ -155,7 +162,110 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
             )
         })
     })
+    describe("Uneven input & Output note split in hold", () => {
+        const buyerNotes = []
+        let splitProofData
+        let holdProof
+        let splitProofSignatures
+        let holdId: string
+        let sellerCashNote1
+        const hashLock = newSecretHashPair()
 
+        test("Construct joinsplit proof to split 1 note into 5", async () => {
+            for (let i = 0; i < 5; i++) {
+                buyerNotes.push(await note.create(buyer.publicKey, 20))
+            }
+            const splitProof = new JoinSplitProof(
+                [splitTestBuyerCashNote1], // input note 100
+                buyerNotes, // output notes 5 * 20 each
+                buyer.address, // the sender of the proof
+                0, // deposit (negative), withdrawal (positive) or transfer (zero)
+                zeroAddress // public token owner
+            )
+            splitProofData = splitProof.encodeABI(buyerCash.address)
+            splitProofSignatures = splitProof.constructSignatures(
+                buyerCash.address,
+                [buyer]
+            )
+        })
+        test("Constructs second proof to send buyer's 5 200 notes to the seller using the notary in 1 note", async () => {
+            // Only seems to work with even inputs and outputs
+            // This test should be rewritten with one input to multiple outpus once this bug is fixed
+            sellerCashNote1 = await note.create(seller.publicKey, 100)
+
+            holdProof = new JoinSplitProof(
+                buyerNotes, // input notes 20 each * 5 = 100
+                [sellerCashNote1], // output note = 100
+                buyerCash.address,
+                0, // deposit (negative), withdrawal (positive) or transfer (zero)
+                zeroAddress // public token owner
+            )
+        })
+        test("Buyer holds their 5 notes for transfer to seller", async () => {
+            const expiration = addDays(new Date(), 2)
+            const holdSignature = aztecSigner.signHoldForProof(
+                buyerCash.address,
+                holdProof.eth.output,
+                notary.address,
+                epochSeconds(expiration),
+                hashLock.hash,
+                buyer.privateKey
+            )
+            const holdProofData = holdProof.encodeABI(buyerCash.address)
+            const tx = await buyerCash.splitAndHoldProofs(
+                proofs.JOIN_SPLIT_PROOF,
+                splitProofData,
+                holdProofData,
+                notary.address,
+                epochSeconds(expiration),
+                hashLock.hash,
+                splitProofSignatures,
+                holdSignature
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).toEqual(1)
+            expect(receipt.events[0].event).toEqual("DestroyNote")
+            expect(receipt.events[1].event).toEqual("CreateNote")
+            expect(receipt.events[2].event).toEqual("CreateNote")
+            expect(receipt.events[3].event).toEqual("CreateNote")
+            expect(receipt.events[4].event).toEqual("CreateNote")
+            expect(receipt.events[5].event).toEqual("CreateNote")
+            expect(receipt.events[6].event).toEqual("NewHold")
+            expect(receipt.events[6].args.sender).toEqual(buyer.address)
+            expect(receipt.events[6].args.lockHash).toEqual(hashLock.hash)
+            expect(receipt.events[6].args.notary).toEqual(notary.address)
+            expect(receipt.events[6].args.inputNoteHashes).toHaveLength(5)
+            expect(receipt.events[6].args.outputNoteHashes).toHaveLength(1)
+            expect(receipt.events[6].args.holdId).toMatch(bytes32)
+            holdId = receipt.events[6].args.holdId
+        })
+        test("Notary executes the hold", async () => {
+            const tx = await notaryCash["executeHold(bytes32,bytes32)"](
+                holdId,
+                hashLock.secret
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).toEqual(1)
+        })
+        test("Check input notes were all spent", async () => {
+            for (const inputNote of buyerNotes) {
+                const onChainNote = await aceContract.getNote(
+                    notaryCash.address,
+                    inputNote.noteHash
+                )
+                expect(onChainNote.status).toEqual(2) // SPENT
+                expect(onChainNote.noteOwner).toEqual(buyer.address)
+            }
+        })
+        test("Check output note is unspent", async () => {
+            const onChainNote = await aceContract.getNote(
+                issuerCash.address,
+                sellerCashNote1.noteHash
+            )
+            expect(onChainNote.status).toEqual(1) // UNSPENT
+            expect(onChainNote.noteOwner).toEqual(seller.address)
+        })
+    })
     describe("Seller swaps 20 asset token for 100 cash from the buyer", () => {
         const hashLock = newSecretHashPair()
         let joinSplitProof
@@ -363,7 +473,7 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
         let sellerCashNote2
         let holdId: string
         test("Constructs first proof to split buyer's 100 note into 70 and 30", async () => {
-            buyerCashNote3 = await note.create(buyer.publicKey, 30)
+            buyerCashNote3 = await note.create(buyer.publicKey, 20)
             buyerCashNote4 = await note.create(buyer.publicKey, 80)
             const splitProof = new JoinSplitProof(
                 [buyerCashNote2], // input notes 110
@@ -379,10 +489,10 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
             )
         })
         test("Constructs second proof to send buyer's 30 note to the seller using the notary", async () => {
-            sellerCashNote2 = await note.create(seller.publicKey, 30)
+            sellerCashNote2 = await note.create(seller.publicKey, 20)
             holdProof = new JoinSplitProof(
-                [buyerCashNote3], // input notes 100
-                [sellerCashNote2], // output notes 100
+                [buyerCashNote3], // input notes 20
+                [sellerCashNote2], // output notes 20
                 buyerCash.address,
                 0, // deposit (negative), withdrawal (positive) or transfer (zero)
                 zeroAddress // public token owner
@@ -448,6 +558,34 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
                 expect(err.message).toMatch("expected note to exist")
             }
         })
+        test("Buyer attempts to execute the hold using confidentialTransferFrom but fails", async () => {
+            try {
+                const tx = await buyerCash[
+                    "confidentialTransferFrom(uint24,bytes)"
+                ](proofs.JOIN_SPLIT_PROOF, holdProof.eth.output)
+                const receipt = await tx.wait()
+                // Shouldn't reach this line as the error should be caught.
+                // If this line is reached, the transfer is succeeding (which it shouldn't)
+                expect(receipt.status).toEqual(0)
+            } catch (err) {
+                expect(err).toBeInstanceOf(Error)
+                expect(err.message).toMatch("input note is on hold")
+            }
+        })
+        test("Notary attempts to execute the hold using confidentialTransferFrom but fails", async () => {
+            try {
+                const tx = await notaryCash[
+                    "confidentialTransferFrom(uint24,bytes)"
+                ](proofs.JOIN_SPLIT_PROOF, holdProof.eth.output)
+                const receipt = await tx.wait()
+                // Shouldn't reach this line as the error should be caught.
+                // If this line is reached, the transfer is succeeding (which it shouldn't)
+                expect(receipt.status).toEqual(0)
+            } catch (err) {
+                expect(err).toBeInstanceOf(Error)
+                expect(err.message).toMatch("input note is on hold")
+            }
+        })
         test("Notary executes the hold", async () => {
             const tx = await notaryCash["executeHold(bytes32,bytes32)"](
                 holdId,
@@ -470,6 +608,82 @@ describe("Holdable, Hash-Lock, Zero-Knowledge Asset Swap", () => {
                     await aceContract.getNote(
                         buyerCash.address,
                         sellerCashNote2.noteHash
+                    )
+                ).status
+            ).toEqual(1) // UNSPENT
+        })
+        test("Attempt to transfer note from seller to buyer on note that was output from hold", async () => {
+            const buyerCashNote5 = await note.create(buyer.publicKey, 20)
+            const transferProof = new JoinSplitProof(
+                [sellerCashNote2], // input notes 30
+                [buyerCashNote5], // output notes 30
+                seller.address, // the confidentialTransferFrom comes from the ZkAsset
+                0, // deposit (negative), withdrawal (positive) or transfer (zero)
+                zeroAddress // public token owner
+            )
+            const transferProofData = transferProof.encodeABI(
+                sellerCash.address
+            )
+            const transferProofSignatures = transferProof.constructSignatures(
+                sellerCash.address,
+                [seller]
+            )
+            const tx = await sellerCash["confidentialTransfer(bytes,bytes)"](
+                transferProofData,
+                transferProofSignatures
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).toEqual(1)
+            expect(
+                (
+                    await aceContract.getNote(
+                        sellerCash.address,
+                        sellerCashNote2.noteHash
+                    )
+                ).status
+            ).toEqual(2) // SPENT
+            expect(
+                (
+                    await aceContract.getNote(
+                        buyerCash.address,
+                        buyerCashNote5.noteHash
+                    )
+                ).status
+            ).toEqual(1) // UNSPENT
+        })
+        test("Attempt to transfer note from buyer to seller on note that was output from hold", async () => {
+            const sellerCashNote3 = await note.create(buyer.publicKey, 80)
+            const transferProof = new JoinSplitProof(
+                [buyerCashNote4], // input notes 80
+                [sellerCashNote3], // output notes 80
+                buyer.address, // the confidentialTransferFrom comes from the ZkAsset
+                0, // deposit (negative), withdrawal (positive) or transfer (zero)
+                zeroAddress // public token owner
+            )
+            const transferProofData = transferProof.encodeABI(buyerCash.address)
+            const transferProofSignatures = transferProof.constructSignatures(
+                buyerCash.address,
+                [buyer]
+            )
+            const tx = await buyerCash["confidentialTransfer(bytes,bytes)"](
+                transferProofData,
+                transferProofSignatures
+            )
+            const receipt = await tx.wait()
+            expect(receipt.status).toEqual(1)
+            expect(
+                (
+                    await aceContract.getNote(
+                        buyerCash.address,
+                        buyerCashNote4.noteHash
+                    )
+                ).status
+            ).toEqual(2) // SPENT
+            expect(
+                (
+                    await aceContract.getNote(
+                        sellerCash.address,
+                        sellerCashNote3.noteHash
                     )
                 ).status
             ).toEqual(1) // UNSPENT
