@@ -227,7 +227,7 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
             expect(await publicToken.balanceOf(aceContract.address)).toEqualBN(0)
             expect(await publicToken.totalSupply()).toEqualBN(0)
         })
-        describe("Decrypt the output note from the CreateNote event from the confidential mint transaction", () => {
+        describe.skip("Decrypt the output note from the CreateNote event from the confidential mint transaction", () => {
             let eventArgs
             test("Distributor gets the CreateNote event", async () => {
                 const filter = distributorZkAsset.filters.CreateNote(
@@ -345,7 +345,7 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
             expect(await publicToken.balanceOf(aceContract.address)).toEqualBN(0)
             expect(await publicToken.totalSupply()).toEqualBN(0)
         })
-        describe("Decrypt output note from the CreateNote event from the confidential transfer transaction", () => {
+        describe.skip("Decrypt output note from the CreateNote event from the confidential transfer transaction", () => {
             let eventArgs
             test("Bank 1 gets the CreateNote event where they are the owner", async () => {
                 const filter = bank1ZkAsset.filters.CreateNote(
@@ -455,7 +455,7 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
             expect(await publicToken.balanceOf(aceContract.address)).toEqualBN(0)
             expect(await publicToken.totalSupply()).toEqualBN(0)
         })
-        describe("Decrypt output notes from the CreateNote events from the confidential transfer transaction", () => {
+        describe.skip("Decrypt output notes from the CreateNote events from the confidential transfer transaction", () => {
             let outputNote1EventArgs
             let outputNote2EventArgs
             test("Bank 2 gets all the CreateNote events", async () => {
@@ -953,6 +953,11 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
                 expect(eventNote.noteHash).toEqual(outputNotes[2].noteHash)
                 expect(eventNote.owner).toEqual(bank1.address)
                 expect(eventNote.k.toNumber()).toEqual(0)
+            })
+            test("parse bank 1 output note using viewing key", async () => {
+                const parsedNote = await note.fromViewKey(outputNotes[2].getView())
+                expect(parsedNote.noteHash).toEqual(outputNotes[2].noteHash)
+                expect(parsedNote.k.toNumber()).toEqual(0)
             })
         })
     })
