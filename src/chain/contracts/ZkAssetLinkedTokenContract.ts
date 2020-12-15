@@ -1,16 +1,16 @@
 import { Contract, Signer } from "ethers"
-import * as FactoryBaseCompilerOutput from "../abis/FactoryBase201907.json"
+import * as zkAssetLinkedTokenCompilerOutput from "../abis/ZkAssetLinkedToken.json"
 import providerFactory from "../provider/providerFactory"
-import { FactoryBase201907 as FactoryBase } from "../types"
+import { ZkAssetLinkedToken } from "../types"
 
-export const compilerOutput = FactoryBaseCompilerOutput
+export const compilerOutput = zkAssetLinkedTokenCompilerOutput
 
 export default async (
     signer: Signer | null = null,
     ensOrAddress?: string
-): Promise<FactoryBase> => {
+): Promise<ZkAssetLinkedToken> => {
     const provider = await providerFactory()
     const instance = new Contract(ensOrAddress, compilerOutput.abi, provider)
     const signerInstance = signer ? instance.connect(signer) : instance
-    return signerInstance as FactoryBase
+    return signerInstance as ZkAssetLinkedToken
 }

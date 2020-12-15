@@ -66,14 +66,21 @@ export default async (migrator: Migrator): Promise<ACE> => {
         FactoryAdjustableCompilerOutput,
         aceContract.address
     )
-    await aceContract.setFactory(
+    let tx = await aceContract.setFactory(
         1 * 256 ** 2 + 1 * 256 ** 1 + 1 * 256 ** 0,
         factoryBase.address
     )
-    await aceContract.setFactory(
+    await tx.wait()
+    tx = await aceContract.setFactory(
         1 * 256 ** 2 + 1 * 256 ** 1 + 2 * 256 ** 0,
         factoryAdjustable.address
     )
+    await tx.wait()
+    tx = await aceContract.setFactory(
+      1 * 256 ** 2 + 1 * 256 ** 1 + 3 * 256 ** 0,
+      factoryAdjustable.address
+    )
+    await tx.wait()
 
     return aceContract
 }

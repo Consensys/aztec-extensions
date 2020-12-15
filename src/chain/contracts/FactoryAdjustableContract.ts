@@ -1,7 +1,7 @@
 import { Contract, Signer } from "ethers"
 import * as FactoryAdjustableCompilerOutput from "../abis/FactoryAdjustable201907.json"
 import providerFactory from "../provider/providerFactory"
-import { FactoryAdjustable201907 as FactoryAdjustable } from "../types/FactoryAdjustable201907"
+import { FactoryAdjustable201907 as FactoryAdjustable } from "../types"
 
 export const compilerOutput = FactoryAdjustableCompilerOutput
 
