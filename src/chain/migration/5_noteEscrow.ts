@@ -1,5 +1,5 @@
 import { compilerOutput } from "../contracts/NoteEscrowContract"
-import { NoteEscrow } from "../types/NoteEscrow"
+import { NoteEscrow } from "../types"
 import { Migrator } from "./migrator"
 
 // Deploys Simple Note Escrow contract

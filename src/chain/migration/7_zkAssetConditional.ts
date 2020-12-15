@@ -1,5 +1,5 @@
 import { compilerOutput } from "../contracts/ZkAssetConditionalContract"
-import { ZkAssetConditional } from "../types/ZkAssetConditional"
+import { ZkAssetConditional } from "../types"
 import { Migrator } from "./migrator"
 
 // Deploys a zero-knowledge asset

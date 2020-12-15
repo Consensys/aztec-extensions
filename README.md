@@ -1,4 +1,6 @@
-# Extensions to the Aztec 1.0 protocol
+# Extensions to the Aztec 1.0 Protocol
+
+Ethereum smart contract extensions to the [AZTEC 1.0 Protocol](https://github.com/aztecProtocol/AZTEC) developed by [AZTEC](https://www.aztecprotocol.com/).
 
 ## Installation
 
