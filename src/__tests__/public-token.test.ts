@@ -74,7 +74,6 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
     let publicToken: SimpleToken
     let user1PublicToken: SimpleToken
     let user2PublicToken: SimpleToken
-
     const regulatorLinkedKeyPair = nacl.box.keyPair()
     const regulatorLinkedAccount = {
         address: regulator.address,
@@ -82,6 +81,7 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
           regulatorLinkedKeyPair.publicKey
         ),
     }
+    let lastMintCounterNote
 
     beforeAll(async () => {
         const config = await configPromise
@@ -180,11 +180,11 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
             // note value
             expect(distributor1Note1.k.toNumber()).toEqual(100000)
 
-            const zeroMintCounterNote = await note.createZeroValueNote()
-            expect(zeroMintCounterNote.k.toNumber()).toEqual(0)
+            lastMintCounterNote = await note.createZeroValueNote()
+            expect(lastMintCounterNote.k.toNumber()).toEqual(0)
 
             const mintProof = new MintProof(
-              zeroMintCounterNote,  // previous sum of all notes
+              lastMintCounterNote,  // previous sum of all notes
               distributor1Note1,    // new sum of all notes
               [distributor1Note1],  // new minted notes
               issuer.address        // sender
@@ -197,7 +197,7 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
             expect(tx.hash).toMatch(transactionHash)
             const receipt = await tx.wait()
             expect(receipt.status).toEqual(1)
-            expect(receipt.events).toHaveLength(2)
+            lastMintCounterNote = distributor1Note1
 
             expect(receipt.events).toHaveLength(2)
             expect(receipt.events[0].event).toEqual("CreateNote")
@@ -227,76 +227,76 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
             expect(await publicToken.balanceOf(aceContract.address)).toEqualBN(0)
             expect(await publicToken.totalSupply()).toEqualBN(0)
         })
-        // describe("Decrypt the output note from the CreateNote event from the confidential mint transaction", () => {
-        //     let eventArgs
-        //     test("Distributor gets the CreateNote event", async () => {
-        //         const filter = distributorZkAsset.filters.CreateNote(
-        //           distributor.address,
-        //           null,
-        //           null
-        //         )
-        //         const events = await distributorZkAsset.queryFilter(filter)
-        //         expect(events).toHaveLength(1)
-        //         expect(events[0].event).toEqual("CreateNote")
-        //         eventArgs = events[0].args
-        //         expect(eventArgs.owner).toEqual(distributor.address)
-        //         expect(eventArgs.noteHash).toEqual(distributor1Note1.noteHash)
-        //     })
-        //     test("Distributor can decrypt output note", async () => {
-        //         const eventNote = await note.fromEventLog(
-        //           eventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
-        //           distributor.privateKey
-        //         )
-        //         expect(eventNote.noteHash).toEqual(distributor1Note1.noteHash)
-        //         expect(eventNote.k.toNumber()).toEqual(100000)
-        //         expect(eventNote.owner).toEqual(distributor.address)
-        //     })
-        //     test("Regulator can decrypt output note using viewing key in metadata from the original output note", async () => {
-        //         const metadataObj = metaDataConstructor(distributor1Note1.metaData.slice(
-        //           AZTEC_JS_DEFAULT_METADATA_PREFIX_LENGTH + 2
-        //         ))
-        //         const allowedAccess = metadataObj.getAccess(regulator.address)
-        //         const encryptedViewingKey = allowedAccess.viewingKey
-        //         const viewingKey = EncryptedViewingKey.fromEncryptedKey(
-        //           encryptedViewingKey
-        //         )
-        //         const regulatorDecryptedViewingKey = viewingKey.decrypt(regulatorLinkedKeyPair.secretKey)
-        //         expect(regulatorDecryptedViewingKey).toMatch(bytesFixed(69))
-        //         const derivedNote = await note.fromViewKey(
-        //           regulatorDecryptedViewingKey
-        //         )
-        //         expect(derivedNote.k.toNumber()).toEqual(100000)
-        //     })
-        //     test("Regulator can decrypt output note using viewing key in metadata from CreateNote event", async () => {
-        //         const metadataObj = metaDataConstructor(eventArgs.metadata.slice(
-        //           AZTEC_JS_METADATA_PREFIX_LENGTH +
-        //           AZTEC_JS_DEFAULT_METADATA_PREFIX_LENGTH
-        //         ))
-        //         const allowedAccess = metadataObj.getAccess(regulator.address)
-        //         const encryptedViewingKey = allowedAccess.viewingKey
-        //         const viewingKey = EncryptedViewingKey.fromEncryptedKey(
-        //           encryptedViewingKey
-        //         )
-        //         const regulatorDecryptedViewingKey = viewingKey.decrypt(regulatorLinkedKeyPair.secretKey)
-        //         expect(regulatorDecryptedViewingKey).toMatch(bytesFixed(69))
-        //         const derivedNote = await note.fromViewKey(
-        //           regulatorDecryptedViewingKey
-        //         )
-        //         expect(derivedNote.k.toNumber()).toEqual(100000)
-        //     })
-        //     test("Bank 1 can not decrypt output note using private key", async () => {
-        //         expect.assertions(2)
-        //         try {
-        //             await note.fromEventLog(
-        //               eventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
-        //               bank1.privateKey
-        //             )
-        //         } catch (err) {
-        //             expect(err).toBeInstanceOf(Error)
-        //             expect(err.message).toEqual('could not find k!')
-        //         }
-        //     })
-        // })
+        describe("Decrypt the output note from the CreateNote event from the confidential mint transaction", () => {
+            let eventArgs
+            test("Distributor gets the CreateNote event", async () => {
+                const filter = distributorZkAsset.filters.CreateNote(
+                  distributor.address,
+                  null,
+                  null
+                )
+                const events = await distributorZkAsset.queryFilter(filter)
+                expect(events).toHaveLength(1)
+                expect(events[0].event).toEqual("CreateNote")
+                eventArgs = events[0].args
+                expect(eventArgs.owner).toEqual(distributor.address)
+                expect(eventArgs.noteHash).toEqual(distributor1Note1.noteHash)
+            })
+            test("Distributor can decrypt output note", async () => {
+                const eventNote = await note.fromEventLog(
+                  eventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
+                  distributor.privateKey
+                )
+                expect(eventNote.noteHash).toEqual(distributor1Note1.noteHash)
+                expect(eventNote.k.toNumber()).toEqual(100000)
+                expect(eventNote.owner).toEqual(distributor.address)
+            })
+            test("Regulator can decrypt output note using viewing key in metadata from the original output note", async () => {
+                const metadataObj = metaDataConstructor(distributor1Note1.metaData.slice(
+                  AZTEC_JS_DEFAULT_METADATA_PREFIX_LENGTH + 2
+                ))
+                const allowedAccess = metadataObj.getAccess(regulator.address)
+                const encryptedViewingKey = allowedAccess.viewingKey
+                const viewingKey = EncryptedViewingKey.fromEncryptedKey(
+                  encryptedViewingKey
+                )
+                const regulatorDecryptedViewingKey = viewingKey.decrypt(regulatorLinkedKeyPair.secretKey)
+                expect(regulatorDecryptedViewingKey).toMatch(bytesFixed(69))
+                const derivedNote = await note.fromViewKey(
+                  regulatorDecryptedViewingKey
+                )
+                expect(derivedNote.k.toNumber()).toEqual(100000)
+            })
+            test("Regulator can decrypt output note using viewing key in metadata from CreateNote event", async () => {
+                const metadataObj = metaDataConstructor(eventArgs.metadata.slice(
+                  AZTEC_JS_METADATA_PREFIX_LENGTH +
+                  AZTEC_JS_DEFAULT_METADATA_PREFIX_LENGTH
+                ))
+                const allowedAccess = metadataObj.getAccess(regulator.address)
+                const encryptedViewingKey = allowedAccess.viewingKey
+                const viewingKey = EncryptedViewingKey.fromEncryptedKey(
+                  encryptedViewingKey
+                )
+                const regulatorDecryptedViewingKey = viewingKey.decrypt(regulatorLinkedKeyPair.secretKey)
+                expect(regulatorDecryptedViewingKey).toMatch(bytesFixed(69))
+                const derivedNote = await note.fromViewKey(
+                  regulatorDecryptedViewingKey
+                )
+                expect(derivedNote.k.toNumber()).toEqual(100000)
+            })
+            test("Bank 1 can not decrypt output note using private key", async () => {
+                expect.assertions(2)
+                try {
+                    await note.fromEventLog(
+                      eventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
+                      bank1.privateKey
+                    )
+                } catch (err) {
+                    expect(err).toBeInstanceOf(Error)
+                    expect(err.message).toEqual('could not find k!')
+                }
+            })
+        })
         test("Distributor confidential transfer 100,000 to bank 1", async () => {
             // construct JoinSplit proof
             bank1Note1 = await note.create(
@@ -345,60 +345,60 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
             expect(await publicToken.balanceOf(aceContract.address)).toEqualBN(0)
             expect(await publicToken.totalSupply()).toEqualBN(0)
         })
-        // describe("Decrypt output note from the CreateNote event from the confidential transfer transaction", () => {
-        //     let eventArgs
-        //     test("Bank 1 gets the CreateNote event where they are the owner", async () => {
-        //         const filter = bank1ZkAsset.filters.CreateNote(
-        //           bank1.address,
-        //           null,
-        //           null
-        //         )
-        //         const events = await bank1ZkAsset.queryFilter(filter)
-        //         expect(events).toHaveLength(1)
-        //         expect(events[0].event).toEqual("CreateNote")
-        //         eventArgs = events[0].args
-        //         expect(eventArgs.owner).toEqual(bank1.address)
-        //         expect(eventArgs.noteHash).toEqual(bank1Note1.noteHash)
-        //     })
-        //     test("Bank 1 can decrypt output note using private key", async () => {
-        //         const eventNote = await note.fromEventLog(
-        //           eventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
-        //           bank1.privateKey
-        //         )
-        //         expect(eventNote.noteHash).toEqual(bank1Note1.noteHash)
-        //         expect(eventNote.k.toNumber()).toEqual(100000)
-        //         expect(eventNote.owner).toEqual(bank1.address)
-        //     })
-        //     test("Regulator can decrypt output note using viewing access key", async () => {
-        //         const metadataObj = metaDataConstructor(eventArgs.metadata.slice(
-        //           AZTEC_JS_METADATA_PREFIX_LENGTH +
-        //           AZTEC_JS_DEFAULT_METADATA_PREFIX_LENGTH
-        //         ))
-        //         const allowedAccess = metadataObj.getAccess(regulator.address)
-        //         const encryptedViewingKey = allowedAccess.viewingKey
-        //         const viewingKey = EncryptedViewingKey.fromEncryptedKey(
-        //           encryptedViewingKey
-        //         )
-        //         const regulatorDecryptedViewingKey = viewingKey.decrypt(regulatorLinkedKeyPair.secretKey)
-        //         expect(regulatorDecryptedViewingKey).toMatch(bytesFixed(69))
-        //         const derivedNote = await note.fromViewKey(
-        //           regulatorDecryptedViewingKey
-        //         )
-        //         expect(derivedNote.k.toNumber()).toEqual(100000)
-        //     })
-        //     test("Bank 2 can not decrypt output note using private key", async () => {
-        //         expect.assertions(2)
-        //         try {
-        //             await note.fromEventLog(
-        //               eventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
-        //               bank2.privateKey
-        //             )
-        //         } catch (err) {
-        //             expect(err).toBeInstanceOf(Error)
-        //             expect(err.message).toEqual('could not find k!')
-        //         }
-        //     })
-        // })
+        describe("Decrypt output note from the CreateNote event from the confidential transfer transaction", () => {
+            let eventArgs
+            test("Bank 1 gets the CreateNote event where they are the owner", async () => {
+                const filter = bank1ZkAsset.filters.CreateNote(
+                  bank1.address,
+                  null,
+                  null
+                )
+                const events = await bank1ZkAsset.queryFilter(filter)
+                expect(events).toHaveLength(1)
+                expect(events[0].event).toEqual("CreateNote")
+                eventArgs = events[0].args
+                expect(eventArgs.owner).toEqual(bank1.address)
+                expect(eventArgs.noteHash).toEqual(bank1Note1.noteHash)
+            })
+            test("Bank 1 can decrypt output note using private key", async () => {
+                const eventNote = await note.fromEventLog(
+                  eventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
+                  bank1.privateKey
+                )
+                expect(eventNote.noteHash).toEqual(bank1Note1.noteHash)
+                expect(eventNote.k.toNumber()).toEqual(100000)
+                expect(eventNote.owner).toEqual(bank1.address)
+            })
+            test("Regulator can decrypt output note using viewing access key", async () => {
+                const metadataObj = metaDataConstructor(eventArgs.metadata.slice(
+                  AZTEC_JS_METADATA_PREFIX_LENGTH +
+                  AZTEC_JS_DEFAULT_METADATA_PREFIX_LENGTH
+                ))
+                const allowedAccess = metadataObj.getAccess(regulator.address)
+                const encryptedViewingKey = allowedAccess.viewingKey
+                const viewingKey = EncryptedViewingKey.fromEncryptedKey(
+                  encryptedViewingKey
+                )
+                const regulatorDecryptedViewingKey = viewingKey.decrypt(regulatorLinkedKeyPair.secretKey)
+                expect(regulatorDecryptedViewingKey).toMatch(bytesFixed(69))
+                const derivedNote = await note.fromViewKey(
+                  regulatorDecryptedViewingKey
+                )
+                expect(derivedNote.k.toNumber()).toEqual(100000)
+            })
+            test("Bank 2 can not decrypt output note using private key", async () => {
+                expect.assertions(2)
+                try {
+                    await note.fromEventLog(
+                      eventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
+                      bank2.privateKey
+                    )
+                } catch (err) {
+                    expect(err).toBeInstanceOf(Error)
+                    expect(err.message).toEqual('could not find k!')
+                }
+            })
+        })
         test("Bank 1 confidential transfer of 20,000 to bank 2", async () => {
             bank1Note2 = await note.create(
               bank1.publicKey,
@@ -581,6 +581,10 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
             expect(await publicToken.balanceOf(user1.address)).toEqualBN(30000)
             expect(await publicToken.balanceOf(aceContract.address)).toEqualBN(0)
             expect(await publicToken.totalSupply()).toEqualBN(30000)
+
+            const registry = await aceContract.getRegistry(bank1ZkAsset.address)
+            expect(registry.totalSupply).toEqualBN(0)
+            expect(registry.totalSupplemented).toEqualBN(30000)
         })
         test("User 1 public transfers 5,000 to user 2", async () => {
             const tx = await user1PublicToken.transfer(user2.address, 5000)
@@ -642,6 +646,10 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
                 )
                 expect(onChainUnspentNote.status).toEqual(1) // unspent
                 expect(onChainUnspentNote.noteOwner).toEqual(bank2.address)
+
+                const registry = await aceContract.getRegistry(user2ZkAsset.address)
+                expect(registry.totalSupply).toEqualBN(3000)
+                expect(registry.totalSupplemented).toEqualBN(30000)
 
                 expect(await publicToken.balanceOf(issuer.address)).toEqualBN(0)
                 expect(await publicToken.balanceOf(distributor.address)).toEqualBN(0)
@@ -783,6 +791,10 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
             )
             expect(onChainNote.status).toEqual(2)   // spent
 
+            const registry = await aceContract.getRegistry(user2ZkAsset.address)
+            expect(registry.totalSupply).toEqualBN(3000)
+            expect(registry.totalSupplemented).toEqualBN(30000)
+
             expect(await publicToken.balanceOf(issuer.address)).toEqualBN(0)
             expect(await publicToken.balanceOf(distributor.address)).toEqualBN(0)
             expect(await publicToken.balanceOf(bank1.address)).toEqualBN(0)
@@ -791,6 +803,157 @@ describe("confidentialMint, confidentialTransfer, withdraw, public transfer, dep
             expect(await publicToken.balanceOf(user2.address)).toEqualBN(2000)
             expect(await publicToken.balanceOf(aceContract.address)).toEqualBN(3000)
             expect(await publicToken.totalSupply()).toEqualBN(30000)
+        })
+    })
+    describe("Masked receivers", () => {
+        let outputNotes
+        test("Issuer confidential mint 200,000 to distributor", async () => {
+            const outputNotePromises = [issuer, distributor, bank1, bank2, user1, user2].map((account) => {
+                if (account.address === distributor.address) {
+                    return note.create(
+                      distributor.publicKey,
+                      200000,
+                      [regulatorLinkedAccount]
+                    )
+                }
+                return note.create(
+                  account.publicKey,
+                  0,
+                  [regulatorLinkedAccount]
+                )
+            })
+            outputNotes = await Promise.all(outputNotePromises)
+            const netMintCounterNote = await note.create(issuer.publicKey, 100000 + 200000)
+
+            const mintProof = new MintProof(
+              lastMintCounterNote,  // previous sum of all notes
+              netMintCounterNote,   // new sum of all notes
+              outputNotes,          // new minted notes
+              issuer.address        // sender
+            )
+            const mintData = mintProof.encodeABI()
+            const tx = await issuerZkAsset.confidentialMint(
+              proofs.MINT_PROOF,
+              mintData
+            )
+            expect(tx.hash).toMatch(transactionHash)
+            const receipt = await tx.wait()
+            expect(receipt.status).toEqual(1)
+            lastMintCounterNote = netMintCounterNote
+
+            expect(receipt.events).toHaveLength(7)
+            expect(receipt.events[0].event).toEqual("CreateNote")
+            expect(receipt.events[1].event).toEqual("CreateNote")
+            expect(receipt.events[2].event).toEqual("CreateNote")
+            expect(receipt.events[3].event).toEqual("CreateNote")
+            expect(receipt.events[4].event).toEqual("CreateNote")
+            expect(receipt.events[5].event).toEqual("CreateNote")
+            expect(receipt.events[6].event).toEqual(
+              "UpdateTotalMinted"
+            )
+            expect(receipt.events[1].args.owner).toEqual(
+              distributor.address
+            )
+            expect(receipt.events[1].args.noteHash).toEqual(
+              outputNotes[1].noteHash
+            )
+            const onChainNote = await aceContract.getNote(
+              issuerZkAsset.address,
+              outputNotes[1].noteHash
+            )
+            expect(onChainNote.status).toEqual(1) // unspent
+            expect(onChainNote.noteOwner).toEqual(distributor.address)
+
+            // check the registry balances
+            const registry = await aceContract.getRegistry(distributorZkAsset.address)
+            expect(registry.totalSupply).toEqualBN(3000)
+            expect(registry.totalSupplemented).toEqualBN(30000)
+
+            expect(await publicToken.balanceOf(issuer.address)).toEqualBN(0)
+            expect(await publicToken.balanceOf(distributor.address)).toEqualBN(0)
+            expect(await publicToken.balanceOf(bank1.address)).toEqualBN(0)
+            expect(await publicToken.balanceOf(bank2.address)).toEqualBN(0)
+            expect(await publicToken.balanceOf(user1.address)).toEqualBN(25000)
+            expect(await publicToken.balanceOf(user2.address)).toEqualBN(2000)
+            expect(await publicToken.balanceOf(aceContract.address)).toEqualBN(3000)
+            expect(await publicToken.totalSupply()).toEqualBN(30000)
+        })
+        describe("Decrypt the output note from the CreateNote event from the confidential mint transaction", () => {
+            let distributorCreateNoteEventArgs
+            let bank1CreateNoteEventArgs
+            test("Distributor gets the CreateNote event", async () => {
+                const filter = distributorZkAsset.filters.CreateNote(
+                  distributor.address,
+                  null,
+                  null
+                )
+                const events = await distributorZkAsset.queryFilter(filter)
+                expect(events).toHaveLength(3)
+                expect(events[2].event).toEqual("CreateNote")
+                distributorCreateNoteEventArgs = events[2].args
+                expect(distributorCreateNoteEventArgs.owner).toEqual(distributor.address)
+                expect(distributorCreateNoteEventArgs.noteHash).toEqual(outputNotes[1].noteHash)
+            })
+            test("Distributor can decrypt output note", async () => {
+                const eventNote = await note.fromEventLog(
+                  distributorCreateNoteEventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
+                  distributor.privateKey
+                )
+                expect(eventNote.noteHash).toEqual(outputNotes[1].noteHash)
+                expect(eventNote.k.toNumber()).toEqual(200000)
+                expect(eventNote.owner).toEqual(distributor.address)
+            })
+            test("Regulator can decrypt output note using viewing key in metadata from CreateNote event", async () => {
+                const metadataObj = metaDataConstructor(distributorCreateNoteEventArgs.metadata.slice(
+                  AZTEC_JS_METADATA_PREFIX_LENGTH +
+                  AZTEC_JS_DEFAULT_METADATA_PREFIX_LENGTH
+                ))
+                const allowedAccess = metadataObj.getAccess(regulator.address)
+                const encryptedViewingKey = allowedAccess.viewingKey
+                const viewingKey = EncryptedViewingKey.fromEncryptedKey(
+                  encryptedViewingKey
+                )
+                const regulatorDecryptedViewingKey = viewingKey.decrypt(regulatorLinkedKeyPair.secretKey)
+                expect(regulatorDecryptedViewingKey).toMatch(bytesFixed(69))
+                const derivedNote = await note.fromViewKey(
+                  regulatorDecryptedViewingKey
+                )
+                expect(derivedNote.k.toNumber()).toEqual(200000)
+            })
+            test("Bank 1 can not decrypt the distributor's output note using private key", async () => {
+                expect.assertions(2)
+                try {
+                    await note.fromEventLog(
+                      distributorCreateNoteEventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
+                      bank1.privateKey
+                    )
+                } catch (err) {
+                    expect(err).toBeInstanceOf(Error)
+                    expect(err.message).toEqual('could not find k!')
+                }
+            })
+            test("Bank 1 gets the CreateNote event", async () => {
+                const filter = distributorZkAsset.filters.CreateNote(
+                  bank1.address,
+                  null,
+                  null
+                )
+                const events = await bank1ZkAsset.queryFilter(filter)
+                expect(events).toHaveLength(4)
+                expect(events[2].event).toEqual("CreateNote")
+                bank1CreateNoteEventArgs = events[3].args
+                expect(bank1CreateNoteEventArgs.owner).toEqual(bank1.address)
+                expect(bank1CreateNoteEventArgs.noteHash).toEqual(outputNotes[2].noteHash)
+            })
+            test("Bank 1 can decrypt their zero value output note using private key", async () => {
+                const eventNote = await note.fromEventLog(
+                  bank1CreateNoteEventArgs.metadata.slice(0, METADATA_AZTEC_DATA_LENGTH + 2),
+                  bank1.privateKey
+                )
+                expect(eventNote.noteHash).toEqual(outputNotes[2].noteHash)
+                expect(eventNote.owner).toEqual(bank1.address)
+                expect(eventNote.k.toNumber()).toEqual(0)
+            })
         })
     })
 })
