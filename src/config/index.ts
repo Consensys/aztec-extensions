@@ -1,4 +1,5 @@
 import local from "./local"
+import remote from "./remote"
 
 export type Account = {
     secretKey: string
@@ -95,6 +96,8 @@ const loadConfig = (): Config => {
     // tslint:disable-next-line: no-console
     console.log(`Environment: ${env}`)
     switch (env) {
+        case "remote":
+            return remote
         default:
             return local
     }
